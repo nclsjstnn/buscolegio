@@ -1,66 +1,121 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { colegios } from '@/data/colegios'
-import type { TipoColegio, NivelColegio } from '@/data/colegios'
+import { useState, useEffect, useCallback } from 'react'
 import ColegioCard from '@/components/ColegioCard'
+import type { ColegioCardData } from '@/components/ColegioCard'
 
-const REGIONES = ['Metropolitana', 'Valparaíso', 'Biobío'] as const
-
-const TIPOS: { value: TipoColegio; label: string }[] = [
-  { value: 'municipal', label: 'Municipal' },
-  { value: 'subvencionado', label: 'Subvencionado' },
-  { value: 'particular', label: 'Particular' },
+const REGIONES = [
+  { value: '15', label: 'Arica y Parinacota' },
+  { value: '1', label: 'Tarapacá' },
+  { value: '2', label: 'Antofagasta' },
+  { value: '3', label: 'Atacama' },
+  { value: '4', label: 'Coquimbo' },
+  { value: '5', label: 'Valparaíso' },
+  { value: '13', label: 'Metropolitana' },
+  { value: '6', label: "O'Higgins" },
+  { value: '7', label: 'Maule' },
+  { value: '16', label: 'Ñuble' },
+  { value: '8', label: 'Biobío' },
+  { value: '9', label: 'La Araucanía' },
+  { value: '14', label: 'Los Ríos' },
+  { value: '10', label: 'Los Lagos' },
+  { value: '11', label: 'Aysén' },
+  { value: '12', label: 'Magallanes' },
 ]
 
-const NIVELES: { value: NivelColegio; label: string }[] = [
-  { value: 'básica', label: 'Básica (1° a 8°)' },
-  { value: 'media', label: 'Media (1° a 4°M)' },
-  { value: 'básica y media', label: 'Básica y Media' },
+const TIPOS = [
+  { value: '1', label: 'Municipal' },
+  { value: '2', label: 'Particular Subvencionado' },
+  { value: '3', label: 'Particular Pagado' },
+  { value: '4', label: 'Corp. Adm. Delegada' },
+  { value: '5', label: 'Serv. Local Educación' },
 ]
 
 const SELECT_CLASS =
   'w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer'
 
+interface ApiResponse {
+  total: number
+  page: number
+  limit: number
+  colegios: ColegioCardData[]
+}
+
+function SkeletonCard() {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden animate-pulse">
+      <div className="h-1.5 w-full bg-gray-200" />
+      <div className="p-5 space-y-3">
+        <div className="flex gap-2">
+          <div className="h-5 w-20 bg-gray-200 rounded-full" />
+          <div className="h-5 w-24 bg-gray-200 rounded-full" />
+        </div>
+        <div className="h-4 w-3/4 bg-gray-200 rounded" />
+        <div className="h-4 w-1/2 bg-gray-200 rounded" />
+        <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+          <div className="h-4 w-16 bg-gray-200 rounded" />
+          <div className="h-8 w-20 bg-gray-200 rounded-lg" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Home() {
   const [busqueda, setBusqueda] = useState('')
   const [region, setRegion] = useState('')
   const [tipo, setTipo] = useState('')
-  const [nivel, setNivel] = useState('')
+  const [page, setPage] = useState(1)
+  const [data, setData] = useState<ApiResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [debouncedBusqueda, setDebouncedBusqueda] = useState('')
 
-  const resultados = useMemo(() => {
-    const q = busqueda.toLowerCase().trim()
-    return colegios.filter((c) => {
-      const matchBusqueda =
-        !q ||
-        c.nombre.toLowerCase().includes(q) ||
-        c.comuna.toLowerCase().includes(q)
+  // Debounce search input
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedBusqueda(busqueda), 400)
+    return () => clearTimeout(t)
+  }, [busqueda])
 
-      const matchRegion = !region || c.region === region
-      const matchTipo = !tipo || c.tipo === tipo
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1)
+  }, [debouncedBusqueda, region, tipo])
 
-      // Un colegio "básica y media" aparece en cualquier filtro de nivel
-      const matchNivel =
-        !nivel ||
-        c.nivel === nivel ||
-        (nivel !== 'básica y media' && c.nivel === 'básica y media')
+  const fetchColegios = useCallback(async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams({ page: String(page), limit: '20' })
+      if (debouncedBusqueda) params.set('q', debouncedBusqueda)
+      if (region) params.set('region', region)
+      if (tipo) params.set('tipo', tipo)
 
-      return matchBusqueda && matchRegion && matchTipo && matchNivel
-    })
-  }, [busqueda, region, tipo, nivel])
+      const res = await fetch(`/api/colegios?${params}`)
+      if (res.ok) {
+        setData(await res.json())
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [debouncedBusqueda, region, tipo, page])
 
-  const hayFiltros = !!(busqueda || region || tipo || nivel)
+  useEffect(() => {
+    fetchColegios()
+  }, [fetchColegios])
+
+  const hayFiltros = !!(busqueda || region || tipo)
 
   function limpiarFiltros() {
     setBusqueda('')
     setRegion('')
     setTipo('')
-    setNivel('')
+    setPage(1)
   }
+
+  const totalPages = data ? Math.ceil(data.total / data.limit) : 0
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-      {/* ── Header ────────────────────────────────────── */}
+      {/* Header */}
       <header className="bg-blue-800 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center">
           <a href="/" className="flex items-baseline gap-0.5 group">
@@ -72,7 +127,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* ── Hero ──────────────────────────────────────── */}
+      {/* Hero */}
       <section className="bg-gradient-to-b from-blue-800 to-blue-900 pb-20 pt-12 md:pt-16 px-4 sm:px-6">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-10">
@@ -84,9 +139,8 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Tarjeta de búsqueda */}
+          {/* Search card */}
           <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6">
-            {/* Input principal */}
             <div className="relative mb-4">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
@@ -102,8 +156,7 @@ export default function Home() {
               />
             </div>
 
-            {/* Filtros */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label htmlFor="filtro-region" className="sr-only">Región</label>
                 <select
@@ -114,9 +167,7 @@ export default function Home() {
                 >
                   <option value="">Todas las regiones</option>
                   {REGIONES.map((r) => (
-                    <option key={r} value={r}>
-                      {r === 'Metropolitana' ? 'Región Metropolitana' : `Región de ${r}`}
-                    </option>
+                    <option key={r.value} value={r.value}>{r.label}</option>
                   ))}
                 </select>
               </div>
@@ -135,34 +186,24 @@ export default function Home() {
                   ))}
                 </select>
               </div>
-
-              <div>
-                <label htmlFor="filtro-nivel" className="sr-only">Nivel educacional</label>
-                <select
-                  id="filtro-nivel"
-                  value={nivel}
-                  onChange={(e) => setNivel(e.target.value)}
-                  className={SELECT_CLASS}
-                >
-                  <option value="">Nivel educacional</option>
-                  {NIVELES.map((n) => (
-                    <option key={n.value} value={n.value}>{n.label}</option>
-                  ))}
-                </select>
-              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Resultados ────────────────────────────────── */}
+      {/* Results */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-        {/* Cabecera de resultados */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-gray-600 text-sm">
-            <span className="font-semibold text-gray-900 text-base">{resultados.length}</span>
-            {' '}
-            {resultados.length === 1 ? 'colegio encontrado' : 'colegios encontrados'}
+            {loading ? (
+              <span className="inline-block h-4 w-32 bg-gray-200 rounded animate-pulse" />
+            ) : (
+              <>
+                <span className="font-semibold text-gray-900 text-base">{data?.total.toLocaleString('es-CL') ?? 0}</span>
+                {' '}
+                {data?.total === 1 ? 'colegio encontrado' : 'colegios encontrados'}
+              </>
+            )}
           </p>
           {hayFiltros && (
             <button
@@ -175,13 +216,43 @@ export default function Home() {
           )}
         </div>
 
-        {/* Grid de cards */}
-        {resultados.length > 0 ? (
+        {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {resultados.map((colegio) => (
-              <ColegioCard key={colegio.id} colegio={colegio} />
-            ))}
+            {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
           </div>
+        ) : data && data.colegios.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {data.colegios.map((colegio) => (
+                <ColegioCard key={colegio.rbd} colegio={colegio} />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-3 mt-10">
+                <button
+                  type="button"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => p - 1)}
+                  className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Anterior
+                </button>
+                <span className="text-sm text-gray-600">
+                  Página {page} de {totalPages}
+                </span>
+                <button
+                  type="button"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                  className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Siguiente
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="text-5xl mb-5" aria-hidden="true">🏫</div>
@@ -202,7 +273,7 @@ export default function Home() {
         )}
       </main>
 
-      {/* ── Footer ────────────────────────────────────── */}
+      {/* Footer */}
       <footer className="border-t border-gray-200 bg-white mt-10 py-8 px-4">
         <div className="max-w-6xl mx-auto text-center">
           <p className="text-gray-400 text-sm">

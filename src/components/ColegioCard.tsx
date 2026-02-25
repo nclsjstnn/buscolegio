@@ -1,85 +1,66 @@
-import type { Colegio } from '@/data/colegios'
+import Link from 'next/link'
 
-const TIPO_CONFIG = {
-  municipal: {
-    label: 'Municipal',
-    badge: 'bg-blue-100 text-blue-700',
-    accent: 'bg-blue-700',
-  },
-  subvencionado: {
-    label: 'Subvencionado',
-    badge: 'bg-emerald-100 text-emerald-700',
-    accent: 'bg-emerald-600',
-  },
-  particular: {
-    label: 'Particular',
-    badge: 'bg-violet-100 text-violet-700',
-    accent: 'bg-violet-600',
-  },
-} as const
-
-const NIVEL_LABEL: Record<Colegio['nivel'], string> = {
-  'básica': 'Básica',
-  'media': 'Media',
-  'básica y media': 'Básica y Media',
+const DEPENDENCIA2_CONFIG: Record<number, { label: string; badge: string; accent: string }> = {
+  1: { label: 'Municipal', badge: 'bg-blue-100 text-blue-700', accent: 'bg-blue-700' },
+  2: { label: 'Particular Subvencionado', badge: 'bg-emerald-100 text-emerald-700', accent: 'bg-emerald-600' },
+  3: { label: 'Particular Pagado', badge: 'bg-violet-100 text-violet-700', accent: 'bg-violet-600' },
+  4: { label: 'Corp. Adm. Delegada', badge: 'bg-orange-100 text-orange-700', accent: 'bg-orange-600' },
+  5: { label: 'Serv. Local Educación', badge: 'bg-rose-100 text-rose-700', accent: 'bg-rose-600' },
 }
 
-function formatPesos(amount: number): string {
-  if (amount === 0) return 'Gratuito'
-  return new Intl.NumberFormat('es-CL', {
-    style: 'currency',
-    currency: 'CLP',
-    minimumFractionDigits: 0,
-  }).format(amount)
+function formatArancel(val: string | undefined): string {
+  if (!val) return 'Sin información'
+  const v = val.trim().toUpperCase()
+  if (v === 'GRATUITO' || v === '1' || v === '0') return 'Gratuito'
+  return val
 }
 
-function StarsRating({ rating }: { rating: number }) {
-  const filled = Math.round(rating)
-  return (
-    <div className="flex items-center gap-0.5">
-      {Array.from({ length: 5 }, (_, i) => (
-        <span
-          key={i}
-          className={`text-base leading-none ${i < filled ? 'text-amber-400' : 'text-gray-200'}`}
-        >
-          ★
-        </span>
-      ))}
-      <span className="ml-1.5 text-sm font-medium text-gray-500">{rating.toFixed(1)}</span>
-    </div>
-  )
+export interface ColegioCardData {
+  rbd: number
+  nombre: string
+  dependencia2: string
+  dependencia2Codigo: number
+  region: string
+  comuna: string
+  mat_total: number
+  pagoMensual: string
+  nivelesEnsenianza: string[]
 }
 
-export default function ColegioCard({ colegio }: { colegio: Colegio }) {
-  const tipo = TIPO_CONFIG[colegio.tipo]
-  const esGratuito = colegio.mensualidad === 0
+export default function ColegioCard({ colegio }: { colegio: ColegioCardData }) {
+  const config = DEPENDENCIA2_CONFIG[colegio.dependencia2Codigo] ?? {
+    label: colegio.dependencia2,
+    badge: 'bg-gray-100 text-gray-600',
+    accent: 'bg-gray-500',
+  }
+
+  const mensualidad = formatArancel(colegio.pagoMensual)
+  const esGratuito = mensualidad === 'Gratuito'
 
   return (
     <article className="flex flex-col bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
-      {/* Franja de color según tipo */}
-      <div className={`h-1.5 w-full ${tipo.accent}`} />
+      <div className={`h-1.5 w-full ${config.accent}`} />
 
       <div className="flex flex-col flex-1 p-5">
         {/* Badges */}
         <div className="flex flex-wrap gap-2 mb-3">
-          <span className={`inline-flex text-xs font-semibold px-2.5 py-1 rounded-full ${tipo.badge}`}>
-            {tipo.label}
+          <span className={`inline-flex text-xs font-semibold px-2.5 py-1 rounded-full ${config.badge}`}>
+            {config.label}
           </span>
-          <span className="inline-flex text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
-            {NIVEL_LABEL[colegio.nivel]}
-          </span>
+          {colegio.nivelesEnsenianza.slice(0, 1).map((n) => (
+            <span key={n} className="inline-flex text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">
+              {n}
+            </span>
+          ))}
         </div>
 
         {/* Nombre */}
-        <h2 className="text-base font-semibold text-gray-900 leading-snug mb-2">
+        <h2 className="text-base font-semibold text-gray-900 leading-snug mb-3">
           {colegio.nombre}
         </h2>
 
-        {/* Rating */}
-        <StarsRating rating={colegio.rating} />
-
         {/* Detalles */}
-        <dl className="mt-4 space-y-2 flex-1">
+        <dl className="space-y-2 flex-1">
           <div className="flex items-start gap-2">
             <span className="mt-0.5 text-gray-400 shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -87,22 +68,21 @@ export default function ColegioCard({ colegio }: { colegio: Colegio }) {
               </svg>
             </span>
             <dd className="text-sm text-gray-600">
-              {colegio.comuna},{' '}
-              {colegio.region === 'Metropolitana'
-                ? 'Región Metropolitana'
-                : `Región de ${colegio.region}`}
+              {colegio.comuna}, {colegio.region}
             </dd>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-gray-400 shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v1h8v-1zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-1a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v1h-3zM4.75 14.094A5.973 5.973 0 004 17v1H1v-1a3 3 0 013.75-2.906z" />
-              </svg>
-            </span>
-            <dd className="text-sm text-gray-600">
-              {colegio.alumnos.toLocaleString('es-CL')} alumnos
-            </dd>
-          </div>
+          {colegio.mat_total > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-gray-400 shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v1h8v-1zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-1a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v1h-3zM4.75 14.094A5.973 5.973 0 004 17v1H1v-1a3 3 0 013.75-2.906z" />
+                </svg>
+              </span>
+              <dd className="text-sm text-gray-600">
+                {colegio.mat_total.toLocaleString('es-CL')} alumnos
+              </dd>
+            </div>
+          )}
         </dl>
 
         {/* Mensualidad + CTA */}
@@ -110,15 +90,15 @@ export default function ColegioCard({ colegio }: { colegio: Colegio }) {
           <div className="min-w-0">
             <p className="text-xs text-gray-400 mb-0.5">Mensualidad</p>
             <p className={`text-sm font-semibold truncate ${esGratuito ? 'text-emerald-600' : 'text-gray-900'}`}>
-              {formatPesos(colegio.mensualidad)}
+              {mensualidad}
             </p>
           </div>
-          <button
-            type="button"
-            className="shrink-0 bg-blue-800 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors duration-150 cursor-pointer"
+          <Link
+            href={`/colegios/${colegio.rbd}`}
+            className="shrink-0 bg-blue-800 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors duration-150"
           >
             Ver más
-          </button>
+          </Link>
         </div>
       </div>
     </article>
