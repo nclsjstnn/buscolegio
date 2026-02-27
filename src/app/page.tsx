@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import ColegioCard from '@/components/ColegioCard'
 import type { ColegioCardData } from '@/components/ColegioCard'
+import SiteFooter from '@/components/SiteFooter'
 
 const REGIONES = [
   { value: '15', label: 'Arica y Parinacota' },
@@ -273,14 +274,7 @@ export default function Home() {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-200 bg-white mt-10 py-8 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <p className="text-gray-400 text-sm">
-            © {new Date().getFullYear()} buscolegio.com — Ayudando a las familias chilenas a elegir el mejor colegio
-          </p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

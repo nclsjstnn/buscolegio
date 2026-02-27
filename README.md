@@ -1,6 +1,14 @@
-# Buscolegio
+# buscolegio.com
 
-Directorio de colegios de Chile — busca y compara los 16.768 establecimientos educacionales del país usando el Directorio Oficial del Mineduc 2025 (https://datosabiertos.mineduc.cl/directorio-de-establecimientos-educacionales/).
+Directorio de los **16.768 establecimientos educacionales** de Chile con datos oficiales del Ministerio de Educación (Mineduc) 2025.
+
+Construido 100% con **vibe coding** usando [Claude Code](https://claude.ai/code).
+
+## ¿Qué es vibe coding?
+
+Programar describiendo en lenguaje natural lo que quieres construir y dejar que un agente de IA (Claude Code) genere el código. No reemplaza el criterio del desarrollador, pero elimina la fricción del código repetitivo y permite construir productos funcionales mucho más rápido.
+
+---
 
 ## Stack
 
@@ -9,6 +17,20 @@ Directorio de colegios de Chile — busca y compara los 16.768 establecimientos 
 - **MongoDB Atlas** + **Mongoose** — base de datos de establecimientos
 - **react-leaflet** — mapa interactivo en ficha de colegio
 - **csv-parse** — importación del CSV oficial del Mineduc
+- **Google Places API** — enriquecimiento opcional de datos (foto, rating, web) en primer acceso
+
+## Features
+
+- Búsqueda por nombre / comuna con debounce
+- Filtros por región (16) y tipo de dependencia (5)
+- Paginación de resultados
+- Ficha de colegio: niveles, matrículas, mapa, dependencia, programas PIE/PACE
+- Sistema de reseñas con localStorage
+- Enriquecimiento con Google Places en primer acceso
+- Footer compartido con créditos y link a "Sobre nosotros"
+- Página `/sobre-nosotros` con la historia del proyecto
+
+---
 
 ## Inicio rápido
 
@@ -25,6 +47,7 @@ Crea `.env.local` en la raíz del proyecto:
 ```env
 MONGODB_URI=mongodb+srv://<user>:<pass>@cluster.mongodb.net/buscolegio
 IMPORT_SECRET=dev-secret
+GOOGLE_PLACES_API_KEY=AIza...   # opcional
 ```
 
 ### 3. Iniciar servidor de desarrollo
@@ -58,6 +81,8 @@ src/
 │   ├── globals.css
 │   ├── colegios/
 │   │   └── [rbd]/page.tsx           # Ficha de colegio (Server Component)
+│   ├── sobre-nosotros/
+│   │   └── page.tsx                 # Página "Sobre nosotros" — origen del proyecto y vibe coding
 │   └── api/
 │       ├── import/route.ts          # POST — importa CSV a MongoDB
 │       ├── colegios/route.ts        # GET  — lista paginada con filtros
@@ -65,7 +90,9 @@ src/
 ├── components/
 │   ├── ColegioCard.tsx              # Tarjeta de colegio
 │   ├── MapComponent.tsx             # Mapa Leaflet (client-only)
-│   └── MapWrapper.tsx               # Wrapper 'use client' para SSR
+│   ├── MapWrapper.tsx               # Wrapper 'use client' para SSR
+│   ├── ReviewsSection.tsx           # Reseñas con localStorage
+│   └── SiteFooter.tsx               # Footer compartido (logo, "Sobre nosotros", créditos)
 ├── lib/
 │   ├── mongodb.ts                   # Singleton de conexión Mongoose
 │   └── codigos.ts                   # Tablas de decodificación Mineduc
@@ -75,12 +102,6 @@ src/
 Directorio-Oficial-EE-2025/
 └── 20250926_Directorio_Oficial_EE_2025_20250430_WEB.csv
 ```
-
-<<<<<<< HEAD
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-Made by Nicolas Justiniano
-=======
 ## API
 
 ### `GET /api/colegios`
@@ -106,14 +127,11 @@ Respuesta: `{ total, page, limit, colegios[] }`
 
 Retorna el documento completo de un establecimiento por su RBD.
 
-Ejemplo:
-```
-GET /api/colegios/1
-```
-
 ### `POST /api/import`
 
 Requiere header `x-import-secret`. Lee el CSV desde disco y hace upsert masivo en MongoDB en lotes de 500 registros.
+
+---
 
 ## Comandos
 
@@ -125,9 +143,12 @@ npm run lint     # ESLint
 npx tsc --noEmit # Verificar tipos sin compilar
 ```
 
+---
+
 ## Fuente de datos
 
 **Directorio Oficial de Establecimientos Educacionales 2025** — Ministerio de Educación de Chile.
 
 El CSV (`Directorio-Oficial-EE-2025/`) contiene 16.768 establecimientos con datos de ubicación, dependencia, niveles de enseñanza, matrícula, especialidades técnico-profesionales y aranceles.
->>>>>>> e7670c7 (añadiendo lista de colegios del 2025)
+
+Vibecodeado con ♥ desde Chile por [Nicolas Justiniano](https://github.com/nclsjstnn).

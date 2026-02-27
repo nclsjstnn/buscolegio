@@ -87,6 +87,8 @@ src/
 │   ├── globals.css                     # Global styles
 │   ├── colegios/
 │   │   └── [rbd]/page.tsx              # School detail page (server component)
+│   ├── sobre-nosotros/
+│   │   └── page.tsx                    # Static "About" page — project origin & vibe coding story
 │   └── api/
 │       ├── import/route.ts             # POST — streams CSV → bulk-upserts into MongoDB
 │       ├── colegios/route.ts           # GET  — paginated school list with filters
@@ -94,7 +96,9 @@ src/
 ├── components/
 │   ├── ColegioCard.tsx                 # School card used in home page grid
 │   ├── MapComponent.tsx                # react-leaflet map (client, ssr:false)
-│   └── MapWrapper.tsx                  # 'use client' wrapper for MapComponent (required by Next 16)
+│   ├── MapWrapper.tsx                  # 'use client' wrapper for MapComponent (required by Next 16)
+│   ├── ReviewsSection.tsx              # Client component — localStorage-backed school reviews
+│   └── SiteFooter.tsx                  # Shared footer (logo, "Sobre nosotros" link, credits)
 ├── lib/
 │   ├── mongodb.ts                      # Mongoose connection singleton (cached in global)
 │   └── codigos.ts                      # Lookup maps for all Chilean Mineduc codes

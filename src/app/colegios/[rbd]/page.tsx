@@ -1,9 +1,12 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { connectDB } from '@/lib/mongodb'
 import Establecimiento from '@/models/Establecimiento'
 import type { IEstablecimiento } from '@/models/Establecimiento'
 import MapWrapper from '@/components/MapWrapper'
+import ReviewsSection from '@/components/ReviewsSection'
+import SiteFooter from '@/components/SiteFooter'
 import { fetchGooglePlacesData } from '@/lib/googlePlaces'
 
 const DEPENDENCIA2_COLORS: Record<number, { badge: string; bar: string }> = {
@@ -61,6 +64,37 @@ async function getColegio(rbd: number): Promise<IEstablecimiento | null> {
   }
 
   return colegio
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ rbd: string }>
+}): Promise<Metadata> {
+  const { rbd } = await params
+  const rbdNum = parseInt(rbd, 10)
+  if (isNaN(rbdNum)) return {}
+  const colegio = await getColegio(rbdNum)
+  if (!colegio) return {}
+
+  const title = `${colegio.nombre} — Buscolegio`
+  const description = `${colegio.dependencia2} en ${colegio.comuna}, ${colegio.region}. RBD ${colegio.rbd}. Matrícula total: ${colegio.mat_total > 0 ? colegio.mat_total.toLocaleString('es-CL') : 'sin datos'} alumnos.`
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `/colegios/${colegio.rbd}`,
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary',
+      title,
+      description,
+    },
+  }
 }
 
 export default async function ColegioDetailPage({
@@ -221,6 +255,9 @@ export default async function ColegioDetailPage({
           </section>
         )}
 
+        {/* Reviews */}
+        <ReviewsSection rbd={colegio.rbd} />
+
         {/* Programs */}
         <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
           <h2 className="text-base font-semibold text-gray-800 mb-4">Programas y características</h2>
@@ -333,14 +370,7 @@ export default async function ColegioDetailPage({
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-200 bg-white mt-10 py-8 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <p className="text-gray-400 text-sm">
-            © {new Date().getFullYear()} buscolegio.com — Ayudando a las familias chilenas a elegir el mejor colegio
-          </p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }
