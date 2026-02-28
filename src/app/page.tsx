@@ -118,23 +118,24 @@ function HomeContent() {
     }
   }, [debouncedBusqueda, region, tipo, page])
 
-  const fetchGeo = useCallback(async () => {
+  useEffect(() => {
+    fetchColegios()
+  }, [fetchColegios])
+
+  useEffect(() => {
     const params = new URLSearchParams()
     if (debouncedBusqueda) params.set('q', debouncedBusqueda)
     if (region) params.set('region', region)
     if (tipo) params.set('tipo', tipo)
-    const res = await fetch(`/api/colegios/geo?${params}`)
-    if (res.ok) {
-      const json = await res.json()
-      setMapData(json.colegios)
-      setMapTotal(json.total)
-    }
+    fetch(`/api/colegios/geo?${params}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (json) {
+          setMapData(json.colegios)
+          setMapTotal(json.total)
+        }
+      })
   }, [debouncedBusqueda, region, tipo])
-
-  useEffect(() => {
-    fetchColegios()
-    fetchGeo()
-  }, [fetchColegios, fetchGeo])
 
   const hayFiltros = !!(busqueda || region || tipo)
 
