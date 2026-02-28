@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 
 interface Review {
-  id: string
+  _id: string
   rating: number
   texto: string
   fecha: string
@@ -55,9 +55,10 @@ function InteractiveStars({
 }
 
 export default function ReviewsSection({ rbd }: Props) {
-  const storageKey = `buscolegio-reviews-${rbd}`
   const [reviews, setReviews] = useState<Review[]>([])
-  const [mounted, setMounted] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<number | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [draftRating, setDraftRating] = useState(0)
@@ -65,51 +66,61 @@ export default function ReviewsSection({ rbd }: Props) {
   const newReviewRef = useRef<HTMLLIElement | null>(null)
 
   useEffect(() => {
-    setMounted(true)
-    try {
-      const raw = localStorage.getItem(storageKey)
-      if (raw) setReviews(JSON.parse(raw) as Review[])
-    } catch {
-      // ignore parse errors
-    }
-  }, [storageKey])
+    fetch(`/api/colegios/${rbd}/reviews`)
+      .then((res) => res.json())
+      .then((data: { reviews: Review[] }) => {
+        setReviews(data.reviews)
+      })
+      .catch(() => setError('No se pudieron cargar las opiniones'))
+      .finally(() => setLoading(false))
+  }, [rbd])
 
   // Show form directly when there are no reviews
   useEffect(() => {
-    if (mounted && reviews.length === 0) setShowForm(true)
-  }, [mounted, reviews.length])
+    if (!loading && reviews.length === 0) setShowForm(true)
+  }, [loading, reviews.length])
 
-  function saveReview(review: Review) {
-    const updated = [review, ...reviews]
-    setReviews(updated)
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(updated))
-    } catch {
-      // ignore storage errors
-    }
-  }
-
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (draftRating < 1 || draftTexto.trim().length < 10) return
-    const review: Review = {
-      id: Date.now().toString(),
-      rating: draftRating,
-      texto: draftTexto.trim(),
-      fecha: new Date().toISOString(),
+
+    setSubmitting(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/colegios/${rbd}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating: draftRating, texto: draftTexto.trim() }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error ?? 'Error al publicar la opinión')
+        return
+      }
+      const data = await res.json()
+      setReviews((prev) => [data.review as Review, ...prev])
+      setDraftRating(0)
+      setDraftTexto('')
+      setShowForm(false)
+      setFilter(null)
+      setTimeout(() => {
+        newReviewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      }, 50)
+    } catch {
+      setError('Error de red. Intenta nuevamente.')
+    } finally {
+      setSubmitting(false)
     }
-    saveReview(review)
-    setDraftRating(0)
-    setDraftTexto('')
-    setShowForm(false)
-    setFilter(null)
-    // Scroll to the new review after render
-    setTimeout(() => {
-      newReviewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-    }, 50)
   }
 
-  if (!mounted) return null
+  if (loading) {
+    return (
+      <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6">
+        <h2 className="text-base font-semibold text-gray-800 mb-4">Opiniones de apoderados</h2>
+        <p className="text-sm text-gray-400">Cargando opiniones...</p>
+      </section>
+    )
+  }
 
   const avgRating =
     reviews.length > 0
@@ -117,10 +128,8 @@ export default function ReviewsSection({ rbd }: Props) {
       : null
 
   const filtered = filter
-    ? [...reviews].filter((r) => r.rating === filter)
-    : [...reviews]
-  // newest-first (already newest-first since we prepend on save, but sort to be safe)
-  filtered.sort((a, b) => b.id.localeCompare(a.id))
+    ? reviews.filter((r) => r.rating === filter)
+    : reviews
 
   const isValid = draftRating >= 1 && draftTexto.trim().length >= 10
 
@@ -181,12 +190,17 @@ export default function ReviewsSection({ rbd }: Props) {
         <p className="text-sm text-gray-400 mb-4">Sé el primero en dejar una opinión</p>
       )}
 
+      {/* Error */}
+      {error && (
+        <p className="text-sm text-red-500 mb-4">{error}</p>
+      )}
+
       {/* Review list */}
       {filtered.length > 0 && (
         <ul className="space-y-3 mb-5">
           {filtered.map((review, idx) => (
             <li
-              key={review.id}
+              key={review._id}
               ref={idx === 0 && !showForm ? newReviewRef : undefined}
               className="rounded-xl border border-gray-100 bg-gray-50 p-4"
             >
@@ -255,10 +269,10 @@ export default function ReviewsSection({ rbd }: Props) {
           <div className="flex gap-2">
             <button
               type="submit"
-              disabled={!isValid}
+              disabled={!isValid || submitting}
               className="text-sm font-semibold px-4 py-2 rounded-lg bg-blue-700 text-white hover:bg-blue-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-              Publicar opinión
+              {submitting ? 'Publicando...' : 'Publicar opinión'}
             </button>
             {reviews.length > 0 && (
               <button

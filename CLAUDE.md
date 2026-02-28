@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-**buscolegio.com** — A landing page for a Chilean school comparison platform. Helps families find and compare schools ("colegios") by region, type, and educational level. UI is in Spanish, data is localized for Chile (CLP currency, Chilean regions).
+**[buscolegio.com](https://buscolegio.com)** — Open source Chilean school directory. Helps families find and compare schools ("colegios") by region, type, and educational level. 16,768 schools from official Mineduc 2025 data. UI is in Spanish, data is localized for Chile (CLP currency, Chilean regions).
+
+GitHub: https://github.com/nclsjstnn/buscolegio
 
 ## Commands
 

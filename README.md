@@ -1,6 +1,6 @@
 # buscolegio.com
 
-Directorio de los **16.768 establecimientos educacionales** de Chile con datos oficiales del Ministerio de Educación (Mineduc) 2025.
+🌐 **[buscolegio.com](https://buscolegio.com)** — Directorio abierto de los **16.768 establecimientos educacionales** de Chile con datos oficiales del Ministerio de Educación (Mineduc) 2025.
 
 Construido 100% con **vibe coding** usando [Claude Code](https://claude.ai/code).
 
@@ -152,3 +152,9 @@ npx tsc --noEmit # Verificar tipos sin compilar
 El CSV (`Directorio-Oficial-EE-2025/`) contiene 16.768 establecimientos con datos de ubicación, dependencia, niveles de enseñanza, matrícula, especialidades técnico-profesionales y aranceles.
 
 Vibecodeado con ♥ desde Chile por [Nicolas Justiniano](https://github.com/nclsjstnn).
+
+---
+
+## Contribuir
+
+Pull requests y issues son bienvenidos. Si encuentras un dato incorrecto o quieres agregar una feature, abre un issue en [GitHub](https://github.com/nclsjstnn/buscolegio).

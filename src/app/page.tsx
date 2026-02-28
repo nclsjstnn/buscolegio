@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import ColegioCard from '@/components/ColegioCard'
 import type { ColegioCardData } from '@/components/ColegioCard'
 import SiteFooter from '@/components/SiteFooter'
+import MapWrapperMulti from '@/components/MapWrapperMulti'
+import type { GeoPoint } from '@/components/MapComponentMulti'
 
 const REGIONES = [
   { value: '15', label: 'Arica y Parinacota' },
@@ -74,6 +76,8 @@ function HomeContent() {
   const [data, setData] = useState<ApiResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [debouncedBusqueda, setDebouncedBusqueda] = useState(() => searchParams.get('q') ?? '')
+  const [mapData, setMapData] = useState<GeoPoint[]>([])
+  const [mapTotal, setMapTotal] = useState(0)
 
   // Debounce search input
   useEffect(() => {
@@ -114,9 +118,23 @@ function HomeContent() {
     }
   }, [debouncedBusqueda, region, tipo, page])
 
+  const fetchGeo = useCallback(async () => {
+    const params = new URLSearchParams()
+    if (debouncedBusqueda) params.set('q', debouncedBusqueda)
+    if (region) params.set('region', region)
+    if (tipo) params.set('tipo', tipo)
+    const res = await fetch(`/api/colegios/geo?${params}`)
+    if (res.ok) {
+      const json = await res.json()
+      setMapData(json.colegios)
+      setMapTotal(json.total)
+    }
+  }, [debouncedBusqueda, region, tipo])
+
   useEffect(() => {
     fetchColegios()
-  }, [fetchColegios])
+    fetchGeo()
+  }, [fetchColegios, fetchGeo])
 
   const hayFiltros = !!(busqueda || region || tipo)
 
@@ -204,6 +222,18 @@ function HomeContent() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Mapa */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 -mt-10">
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          <MapWrapperMulti colegios={mapData} hasFilters={hayFiltros} />
+          {mapTotal > mapData.length && (
+            <p className="text-xs text-gray-400 text-center py-2">
+              Mostrando {mapData.length} de {mapTotal.toLocaleString('es-CL')} colegios en el mapa
+            </p>
+          )}
         </div>
       </section>
 
