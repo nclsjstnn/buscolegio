@@ -240,26 +240,60 @@ function HomeContent() {
 
       {/* Results */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
-        <div className="flex items-center justify-between mb-6">
-          <p className="text-gray-600 text-sm">
-            {loading ? (
-              <span className="inline-block h-4 w-32 bg-gray-200 rounded animate-pulse" />
-            ) : (
-              <>
-                <span className="font-semibold text-gray-900 text-base">{data?.total.toLocaleString('es-CL') ?? 0}</span>
-                {' '}
-                {data?.total === 1 ? 'colegio encontrado' : 'colegios encontrados'}
-              </>
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-gray-600 text-sm">
+              {loading ? (
+                <span className="inline-block h-4 w-32 bg-gray-200 rounded animate-pulse" />
+              ) : (
+                <>
+                  <span className="font-semibold text-gray-900 text-base">{data?.total.toLocaleString('es-CL') ?? 0}</span>
+                  {' '}
+                  {data?.total === 1 ? 'colegio encontrado' : 'colegios encontrados'}
+                </>
+              )}
+            </p>
+            {hayFiltros && (
+              <button
+                type="button"
+                onClick={limpiarFiltros}
+                className="text-sm text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+              >
+                Limpiar todo
+              </button>
             )}
-          </p>
+          </div>
+
           {hayFiltros && (
-            <button
-              type="button"
-              onClick={limpiarFiltros}
-              className="text-sm text-blue-700 hover:text-blue-800 font-medium underline underline-offset-2 transition-colors cursor-pointer"
-            >
-              Limpiar filtros
-            </button>
+            <div className="flex flex-wrap gap-2">
+              {busqueda && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-800 text-sm font-medium">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" /></svg>
+                  {busqueda}
+                  <button type="button" onClick={() => setBusqueda('')} className="ml-0.5 text-blue-400 hover:text-blue-700 cursor-pointer" aria-label="Quitar búsqueda">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                  </button>
+                </span>
+              )}
+              {region && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-800 text-sm font-medium">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  {REGIONES.find((r) => r.value === region)?.label}
+                  <button type="button" onClick={() => setRegion('')} className="ml-0.5 text-blue-400 hover:text-blue-700 cursor-pointer" aria-label="Quitar región">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                  </button>
+                </span>
+              )}
+              {tipo && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-800 text-sm font-medium">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                  {TIPOS.find((t) => t.value === tipo)?.label}
+                  <button type="button" onClick={() => setTipo('')} className="ml-0.5 text-blue-400 hover:text-blue-700 cursor-pointer" aria-label="Quitar tipo">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                  </button>
+                </span>
+              )}
+            </div>
           )}
         </div>
 
