@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import ColegioCard from '@/components/ColegioCard'
 import type { ColegioCardData } from '@/components/ColegioCard'
 import SiteFooter from '@/components/SiteFooter'
@@ -62,14 +63,17 @@ function SkeletonCard() {
   )
 }
 
-export default function Home() {
-  const [busqueda, setBusqueda] = useState('')
-  const [region, setRegion] = useState('')
-  const [tipo, setTipo] = useState('')
-  const [page, setPage] = useState(1)
+function HomeContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const [busqueda, setBusqueda] = useState(() => searchParams.get('q') ?? '')
+  const [region, setRegion] = useState(() => searchParams.get('region') ?? '')
+  const [tipo, setTipo] = useState(() => searchParams.get('tipo') ?? '')
+  const [page, setPage] = useState(() => Number(searchParams.get('page') ?? '1'))
   const [data, setData] = useState<ApiResponse | null>(null)
   const [loading, setLoading] = useState(true)
-  const [debouncedBusqueda, setDebouncedBusqueda] = useState('')
+  const [debouncedBusqueda, setDebouncedBusqueda] = useState(() => searchParams.get('q') ?? '')
 
   // Debounce search input
   useEffect(() => {
@@ -81,6 +85,17 @@ export default function Home() {
   useEffect(() => {
     setPage(1)
   }, [debouncedBusqueda, region, tipo])
+
+  // Sync URL with committed filters
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (debouncedBusqueda) params.set('q', debouncedBusqueda)
+    if (region) params.set('region', region)
+    if (tipo) params.set('tipo', tipo)
+    if (page > 1) params.set('page', String(page))
+    const qs = params.toString()
+    router.replace(qs ? `/?${qs}` : '/', { scroll: false })
+  }, [debouncedBusqueda, region, tipo, page, router])
 
   const fetchColegios = useCallback(async () => {
     setLoading(true)
@@ -276,5 +291,13 @@ export default function Home() {
 
       <SiteFooter />
     </div>
+  )
+}
+
+export default function Home() {
+  return (
+    <Suspense>
+      <HomeContent />
+    </Suspense>
   )
 }
